@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getQuickQuestions, sendChatMessage, getWelcomeMessage } from '../services/api'
+import { useDepartment } from '../contexts/DepartmentContext'
 import { APP_CONSTANTS } from '../config/constants'
 
 function ChatPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { department, deptSlug } = useDepartment()
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -34,17 +36,21 @@ function ChatPage() {
     fetchQuickQuestions()
   }, [])
 
-  // 模擬 AI 回覆
+  // 獲取 AI 回覆
   const getAIResponse = async (question) => {
     try {
       const response = await sendChatMessage(question, sessionId)
       if (response.success) {
-        // 更新 sessionId
+        // 後端 RAG API 返回格式：{ query, answer, sources, ... }
+        // 更新 sessionId（如果有）
         if (response.data.sessionId) {
           setSessionId(response.data.sessionId)
         }
-        return response.data.message
+        
+        // 返回答案內容
+        return response.data.answer || response.data.message || '無法取得回覆'
       } else {
+        console.error('API Error:', response.error)
         return '抱歉，系統發生錯誤，請稍後再試。'
       }
     } catch (error) {
@@ -66,9 +72,41 @@ function ChatPage() {
   useEffect(() => {
     const initializeChat = async () => {
       if (location.state?.question) {
-        handleSendMessage(location.state.question)
+        // 如果有問題，直接發送問題，不顯示歡迎訊息
+        const userMessage = {
+          id: Date.now(),
+          text: location.state.question,
+          sender: 'user',
+          timestamp: new Date()
+        }
+        setMessages([userMessage])
+        setIsTyping(true)
+
+        try {
+          const aiResponseText = await getAIResponse(location.state.question)
+          const aiResponse = {
+            id: Date.now() + 1,
+            text: aiResponseText,
+            sender: 'ai',
+            timestamp: new Date()
+          }
+          // 直接設置完整的訊息陣列，而不是使用 prev
+          setMessages([userMessage, aiResponse])
+        } catch (error) {
+          console.error('Error in initializeChat:', error)
+          const errorResponse = {
+            id: Date.now() + 1,
+            text: '抱歉，系統發生錯誤，請稍後再試。',
+            sender: 'ai',
+            timestamp: new Date()
+          }
+          // 直接設置完整的訊息陣列，而不是使用 prev
+          setMessages([userMessage, errorResponse])
+        } finally {
+          setIsTyping(false)
+        }
       } else {
-        // 從後端獲取初始歡迎訊息
+        // 沒有問題時，從後端獲取初始歡迎訊息
         try {
           const response = await getWelcomeMessage()
           if (response.success) {
@@ -186,7 +224,7 @@ function ChatPage() {
       <div className={`${showSidebar ? 'w-64' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-r border-gray-200 flex flex-col overflow-hidden shadow-lg`}>
         <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/${deptSlug}`)}
             className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors mb-4 cursor-pointer"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,13 +247,14 @@ function ChatPage() {
         <div className="flex-1 overflow-y-auto p-4">
           <h3 className="text-sm font-semibold text-gray-600 mb-3">快速問題</h3>
           <div className="space-y-2">
-            {quickQuestions.map((question, index) => (
+            {quickQuestions.map((item) => (
               <button
-                key={index}
-                onClick={() => handleQuickQuestion(question)}
-                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors cursor-pointer"
+                key={item.id || item.question}
+                onClick={() => handleQuickQuestion(item.question)}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
               >
-                {question}
+                {item.icon && <span className="text-lg">{item.icon}</span>}
+                <span>{item.question}</span>
               </button>
             ))}
           </div>
@@ -263,7 +302,7 @@ function ChatPage() {
                   />
                 </div>
                 <div>
-                  <h2 className="text-gray-800 font-semibold">{APP_CONSTANTS.APP_NAME}</h2>
+                  <h2 className="text-gray-800 font-semibold">{department ? department.name + ' AI助手' : APP_CONSTANTS.APP_NAME}</h2>
                   <p className="text-sm text-gray-500">線上服務中</p>
                 </div>
               </div>

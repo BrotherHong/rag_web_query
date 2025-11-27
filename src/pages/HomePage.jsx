@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFaqList } from '../services/api'
+import { useDepartment } from '../contexts/DepartmentContext'
 import { APP_CONSTANTS } from '../config/constants'
 
 function HomePage() {
   const navigate = useNavigate()
+  const { department, deptSlug, loading: deptLoading } = useDepartment()
   const [faqList, setFaqList] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -67,10 +69,20 @@ function HomePage() {
             </div>
             
             <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-red-700 via-red-600 to-red-700 bg-clip-text text-transparent animate-gradient">
-              {APP_CONSTANTS.APP_NAME}
+              {department ? department.name + ' AI助手' : 'AI助手'}
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-700 mb-12">
+            <p className="text-xl md:text-2xl text-gray-700 mb-4">
+              {department?.description || APP_CONSTANTS.APP_SUBTITLE}
+            </p>
+            
+            {department && (
+              <p className="text-sm text-gray-600">
+                {department.fullName} | {department.contact.phone} 分機 {department.contact.extension}
+              </p>
+            )}
+            
+            <p className="text-xl md:text-2xl text-gray-700 mb-12 mt-4">
               {APP_CONSTANTS.APP_SUBTITLE}
             </p>
           </div>
@@ -89,7 +101,7 @@ function HomePage() {
                 {faqList.map((faq) => (
                   <button 
                     key={faq.id}
-                    onClick={() => navigate('/chat', { state: { question: faq.question } })}
+                    onClick={() => navigate(`/${deptSlug}/chat`, { state: { question: faq.question } })}
                     className="group bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl p-4 hover:bg-red-50 hover:shadow-lg transition-all duration-300 hover:border-red-300 text-center cursor-pointer"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -110,7 +122,7 @@ function HomePage() {
           {/* 開始按鈕 */}
           <div className="mt-12">
             <button 
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate(`/${deptSlug}/chat`)}
               className="group relative px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 rounded-full text-white font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:from-red-700 hover:to-red-800 cursor-pointer"
             >
               <span className="relative z-10">開始使用</span>

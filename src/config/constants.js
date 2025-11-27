@@ -1,10 +1,15 @@
 // API 配置
 export const API_CONFIG = {
   // 後端 API 基礎 URL（請根據實際後端地址修改）
+  // 格式: http://host.com/api/{deptSlug}/...
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   
   // API 端點
   ENDPOINTS: {
+    // 處室相關
+    DEPARTMENTS: '/departments',
+    DEPARTMENT_INFO: '/departments/:slug',
+    
     // 常見問題相關
     FAQ_LIST: '/faq/list',
     FAQ_DETAIL: '/faq/detail',
