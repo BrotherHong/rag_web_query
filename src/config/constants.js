@@ -1,29 +1,15 @@
 // API 配置
 export const API_CONFIG = {
   // 後端 API 基礎 URL（請根據實際後端地址修改）
-  // 格式: http://host.com/api/{deptSlug}/...
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
   
-  // API 端點
+  // API 端點（常用端點）
   ENDPOINTS: {
-    // 處室相關
-    DEPARTMENTS: '/departments',
-    DEPARTMENT_INFO: '/departments/:slug',
-    
     // 常見問題相關
     FAQ_LIST: '/faq/list',
-    FAQ_DETAIL: '/faq/detail',
-    
-    // AI 聊天相關
-    CHAT_SEND: '/chat/send',
-    CHAT_HISTORY: '/chat/history',
-    CHAT_NEW: '/chat/new',
     
     // 快速問題
     QUICK_QUESTIONS: '/questions/quick',
-    
-    // 系統資訊
-    SYSTEM_INFO: '/system/info',
   },
   
   // 請求超時設定（毫秒）
@@ -40,7 +26,7 @@ export const APP_CONSTANTS = {
   UNIVERSITY: {
     NAME: '國立成功大學',
     NAME_EN: 'National Cheng Kung University',
-    LOGO_PATH: '/images/ncku_logo.png',
+    LOGO_PATH: '/rag-query/images/ncku_logo.png',
   },
   
   // 聯絡資訊

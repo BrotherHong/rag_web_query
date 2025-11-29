@@ -14,7 +14,6 @@ function ChatPage() {
   const messagesEndRef = useRef(null)
   const [showSidebar, setShowSidebar] = useState(true)
   const [quickQuestions, setQuickQuestions] = useState([])
-  const [sessionId, setSessionId] = useState(null)
 
   // 從後端獲取快速問題列表
   useEffect(() => {
@@ -39,15 +38,9 @@ function ChatPage() {
   // 獲取 AI 回覆
   const getAIResponse = async (question) => {
     try {
-      const response = await sendChatMessage(question, sessionId)
+      const response = await sendChatMessage(question)
       if (response.success) {
         // 後端 RAG API 返回格式：{ query, answer, sources, ... }
-        // 更新 sessionId（如果有）
-        if (response.data.sessionId) {
-          setSessionId(response.data.sessionId)
-        }
-        
-        // 返回答案內容
         return response.data.answer || response.data.message || '無法取得回覆'
       } else {
         console.error('API Error:', response.error)
@@ -186,9 +179,6 @@ function ChatPage() {
   }
 
   const handleNewChat = async () => {
-    // 重置會話 ID
-    setSessionId(null)
-    
     // 獲取新的歡迎訊息
     try {
       const response = await getWelcomeMessage()

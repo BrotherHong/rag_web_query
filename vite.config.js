@@ -4,13 +4,15 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/rag-query/',
   plugins: [
     react(),
     tailwindcss(),
   ],
   server: {
     host: true,
-    port: 5173,
+    port: 5174,
+    strictPort: true, // 如果 port 被占用就報錯,不要自動遞增
     proxy: {
       // API 代理到後端
       '/api': {

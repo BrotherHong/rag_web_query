@@ -7,7 +7,7 @@ import DepartmentLayout from './components/DepartmentLayout'
 
 function App() {
   return (
-    <Router>
+    <Router basename="/rag-query">
       <Routes>
         {/* 根路徑重定向到預設處室（人事室） */}
         <Route path="/" element={<Navigate to="/hr" replace />} />
@@ -21,8 +21,8 @@ function App() {
           <Route path="chat" element={<ChatPage />} />
         </Route>
         
-        {/* 其他未匹配路徑重定向到 404 */}
-        <Route path="*" element={<Navigate to="/404" replace />} />
+        {/* 其他未匹配路徑重定向到首頁（入口） */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   )
