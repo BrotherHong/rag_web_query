@@ -5,11 +5,8 @@ export const API_CONFIG = {
   
   // API 端點（常用端點）
   ENDPOINTS: {
-    // 常見問題相關
+    // 常見問題相關（統一端點）
     FAQ_LIST: '/faq/list',
-    
-    // 快速問題
-    QUICK_QUESTIONS: '/questions/quick',
   },
   
   // 請求超時設定（毫秒）

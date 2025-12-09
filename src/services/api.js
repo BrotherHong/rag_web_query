@@ -97,29 +97,47 @@ export const getDepartmentInfo = async (deptSlug) => {
 // ===== FAQ 相關 API =====
 // 注意：這些 API 需要根據實際後端接口調整
 
+// ===== FAQ 相關 API =====
+
 /**
  * 獲取常見問題列表
+ * @param {number} limit - 限制返回數量（可選）
+ * @param {string} category - 按分類過濾（可選）
  * @returns {Promise<Object>} 常見問題列表
  */
-export const getFaqList = async () => {
-  // TODO: 根據實際後端 API 調整
-  // 可能需要處室過濾：/departments/${currentDeptId}/faq
-  return apiRequest(API_CONFIG.ENDPOINTS.FAQ_LIST, {
+export const getFaqList = async (limit = null, category = null) => {
+  const deptId = getCurrentDepartmentId()
+  
+  // 如果沒有處室 ID，返回空列表
+  if (!deptId) {
+    console.warn('No department ID available for FAQ list')
+    return {
+      success: true,
+      data: [],
+      total: 0
+    }
+  }
+  
+  const params = new URLSearchParams()
+  params.append('department_id', deptId)
+  if (limit !== null) params.append('limit', limit)
+  if (category) params.append('category', category)
+  
+  const queryString = params.toString()
+  const url = `${API_CONFIG.ENDPOINTS.FAQ_LIST}?${queryString}`
+  
+  return apiRequest(url, {
     method: 'GET',
   })
 }
 
-// ===== 快速問題相關 API =====
-
 /**
- * 獲取快速問題列表
+ * 獲取快速問題列表（聊天頁使用）
+ * 實際上調用 getFaqList，但不限制數量
  * @returns {Promise<Object>} 快速問題列表
  */
 export const getQuickQuestions = async () => {
-  // TODO: 根據實際後端 API 調整
-  return apiRequest(API_CONFIG.ENDPOINTS.QUICK_QUESTIONS, {
-    method: 'GET',
-  })
+  return getFaqList() // 獲取完整列表
 }
 
 // ===== 聊天相關 API (RAG) =====

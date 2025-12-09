@@ -49,7 +49,7 @@ function ChatPage() {
     return <p className="text-gray-800 whitespace-pre-line">{mainAnswer}</p>
   }
 
-  // 解析引用內容
+  // 解析引用內容並按檔名分組
   const parseCitations = (text, sources) => {
     if (!sources || sources.length === 0) return []
 
@@ -64,23 +64,35 @@ function ChatPage() {
       fileMap[source.file_name] = source
     })
 
-    const citations = []
+    // 先解析所有引用
+    const allCitations = []
     citationLines.forEach(line => {
-      // 支援全形和半形括號
       const match = line.match(/文檔(\d+)[（(](.+?)[）)][:：](.+)/)
       if (match) {
         const [, docNum, fileName, content] = match
-        const source = fileMap[fileName]
-        citations.push({
+        allCitations.push({
           docNum,
           fileName,
-          content: content.trim().replace(/^「|」$/g, ''), // 移除前後的引號
-          source
+          content: content.trim().replace(/^「|」$/g, '')
         })
       }
     })
 
-    return citations
+    // 按檔名分組合併
+    const groupedByFile = {}
+    allCitations.forEach(citation => {
+      if (!groupedByFile[citation.fileName]) {
+        groupedByFile[citation.fileName] = {
+          docNum: citation.docNum,
+          fileName: citation.fileName,
+          source: fileMap[citation.fileName],
+          contents: []
+        }
+      }
+      groupedByFile[citation.fileName].contents.push(citation.content)
+    })
+
+    return Object.values(groupedByFile)
   }
 
   // 切換展開/收合
@@ -463,6 +475,7 @@ function ChatPage() {
                                     <svg className="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
+                                    <span className="text-sm font-medium text-gray-800 mr-1">文檔{citation.docNum}</span>
                                     <span className="text-sm text-gray-700">{citation.fileName}</span>
                                   </button>
                                   {citation.source && citation.source.download_link && (
@@ -479,8 +492,12 @@ function ChatPage() {
                                   )}
                                 </div>
                                 {isExpanded && (
-                                  <div className="ml-6 mt-1 p-2 bg-gray-50 rounded text-xs text-gray-700 leading-relaxed">
-                                    {citation.content}
+                                  <div className="ml-6 mt-1 space-y-2">
+                                    {citation.contents.map((content, contentIdx) => (
+                                      <div key={contentIdx} className="p-2 bg-gray-50 rounded text-xs text-gray-700 leading-relaxed">
+                                        「{content}」
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
