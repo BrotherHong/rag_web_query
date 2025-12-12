@@ -145,15 +145,34 @@ export const getQuickQuestions = async () => {
 /**
  * 發送訊息給 AI (RAG 查詢)
  * @param {string} message - 使用者訊息
+ * @param {Array<number>} categoryIds - 分類 ID 列表（可選）
  * @returns {Promise<Object>} AI 回覆
  */
-export const sendChatMessage = async (message) => {
+export const sendChatMessage = async (message, categoryIds = null) => {
+  const requestBody = {
+    query: message,
+    scope_ids: currentDeptId ? [currentDeptId] : []
+  }
+  
+  // 如果有指定分類，加入 category_ids
+  if (categoryIds && categoryIds.length > 0) {
+    requestBody.category_ids = categoryIds
+  }
+  
   return apiRequest('/rag/query', {
     method: 'POST',
-    body: JSON.stringify({
-      query: message,
-      scope_ids: currentDeptId ? [currentDeptId] : []
-    }),
+    body: JSON.stringify(requestBody),
+  })
+}
+
+/**
+ * 獲取處室的分類列表
+ * @param {number} departmentId - 處室 ID
+ * @returns {Promise<Object>} 分類列表
+ */
+export const getCategories = async (departmentId) => {
+  return apiRequest(`/categories/query?department_id=${departmentId}`, {
+    method: 'GET',
   })
 }
 

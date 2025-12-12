@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getQuickQuestions, sendChatMessage, getWelcomeMessage } from '../services/api'
+import { getQuickQuestions, sendChatMessage, getWelcomeMessage, getCategories } from '../services/api'
 import { useDepartment } from '../contexts/DepartmentContext'
 import { APP_CONSTANTS } from '../config/constants'
 
@@ -15,6 +15,8 @@ function ChatPage() {
   const [showSidebar, setShowSidebar] = useState(true)
   const [quickQuestions, setQuickQuestions] = useState([])
   const [expandedSource, setExpandedSource] = useState({})
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState(null) // null 表示「全部」
 
   // 處理檔案下載
   const handleDownload = async (downloadLink, fileName) => {
@@ -123,10 +125,39 @@ function ChatPage() {
     fetchQuickQuestions()
   }, [])
 
+  // 獲取分類列表
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!department?.id) return
+      
+      try {
+        const response = await getCategories(department.id)
+        if (response.success && response.data?.items) {
+          setCategories(response.data.items)
+        } else {
+          console.error('Failed to fetch categories:', response.error)
+          setCategories([])
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        setCategories([])
+      }
+    }
+
+    fetchCategories()
+  }, [department])
+
+  // 處理分類選擇
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId) // 直接設定為選中的分類 ID，null 表示全部
+  }
+
   // 獲取 AI 回覆
   const getAIResponse = async (question) => {
     try {
-      const response = await sendChatMessage(question)
+      // 傳遞選中的分類 ID（null 表示全部）
+      const categoryIds = selectedCategory ? [selectedCategory] : null
+      const response = await sendChatMessage(question, categoryIds)
       if (response.success) {
         // 後端 RAG API 返回格式：{ query, answer, sources, ... }
         return {
@@ -545,7 +576,45 @@ function ChatPage() {
         <div className="border-t border-gray-200 p-4 bg-white/80 backdrop-blur-sm flex-shrink-0 shadow-lg">
           <div className="max-w-4xl mx-auto">
             <div className="flex gap-3">
-              <button className="p-3 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer" title="附加檔案">
+              {/* 分類下拉選單 */}
+              {categories.length > 0 && (
+                <div className="relative">
+                  <label className="absolute -top-2 left-3 px-1 bg-white text-xs text-gray-600 font-medium">
+                    查詢範圍
+                  </label>
+                  <select
+                    value={selectedCategory || ''}
+                    onChange={(e) => handleCategoryChange(e.target.value ? parseInt(e.target.value) : null)}
+                    className="appearance-none bg-white border-2 border-gray-300 rounded-xl pl-10 pr-10 py-3.5 text-sm text-gray-800 font-medium focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 cursor-pointer min-w-[160px] hover:border-gray-400 transition-colors"
+                  >
+                    <option value="">全部分類</option>
+                    {categories
+                      .sort((a, b) => {
+                        // 將「其他」排在最後
+                        if (a.name === '其他') return 1;
+                        if (b.name === '其他') return -1;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              
+              <button className="p-3 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0" title="附加檔案">
                 <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
